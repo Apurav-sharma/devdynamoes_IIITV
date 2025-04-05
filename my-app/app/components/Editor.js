@@ -40,6 +40,10 @@ const Editor = forwardRef(({ value, language, onChange, theme, editorRef }, ref)
     onChange(value);
   };
 
+  const handleMountchange = (editor) => {
+    editorRef.current = editor; // Save editor reference for getting selections
+  }
+
   // Editor options to mimic VS Code
   const options = {
     minimap: { enabled: true },
