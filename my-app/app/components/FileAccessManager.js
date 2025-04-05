@@ -1,18 +1,22 @@
 // components/FileAccessManager.js
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
+import { isFileSystemAccessSupported } from './utils/fileSystem';
 
 export default function FileAccessManager() {
+  const [fsAPISupported, setFsAPISupported] = useState(false);
+  
   useEffect(() => {
     // Check if File System Access API is available
-    const hasFileSystemAccess = 'showOpenFilePicker' in window;
+    const hasFileSystemAccess = isFileSystemAccessSupported();
+    setFsAPISupported(hasFileSystemAccess);
     
     if (hasFileSystemAccess) {
-      console.log('File System Access API is available');
+      console.log('Modern File System Access API is available');
     } else {
-      console.log('File System Access API is not available, using fallback methods');
+      console.log('Modern File System Access API is not available, using fallback methods');
     }
   }, []);
   
-  // This component doesn't render anything but serves as a manager for file operations
+  // This component doesn't render anything visible but serves as a manager for file operations
   return null;
 }
