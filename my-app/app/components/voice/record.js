@@ -45,13 +45,19 @@ export default function VoiceAssistant({ editorRef }) {
         };
     }, [listening]);
 
-    const handleVoiceCommand = (text) => {
+    const handleVoiceCommand = async (text) => {
         // Convert to lowercase for easier command matching
-        const command = text.toLowerCase();
+        const cmd = text.toLowerCase();
 
         // Set last executed command
-        setLastCommand(command);
-        console.log('Command received:', command);
+        setLastCommand(cmd);
+        console.log('Command received:', cmd);
+
+        const res = await axios.post('http://127.0.0.1:5000/match-command', {
+            text: cmd
+        })
+
+        command = res.matched_command;
 
         // Editor navigation commands
         if (command.includes('scroll down')) {
