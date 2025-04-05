@@ -1,91 +1,45 @@
 {
-  "main_file": "test.js",
-  "project_root": "C:\\Users\\Apurav\\Downloads\\devdynamo\\devdynamoes_IIITV\\file_path_tracking",
+  "main_file": "../my-app/app/page.js",
+  "project_root": "C:\\Users\\Apurav\\Downloads\\devdynamo\\devdynamoes_IIITV\\my-app",
   "imports": [
-    "../testing_files_for_importing/button"
+    "./utils/fileSystem",
+    "./components/Editor",
+    "./components/Sidebar",
+    "./components/Navbar",
+    "./components/StatusBar",
+    "./components/FileAccessManager"
   ],
   "linked_files": [
     {
-      "import_path": "../testing_files_for_importing/button",
-      "abs_path": "C:\\Users\\Apurav\\Downloads\\devdynamo\\devdynamoes_IIITV\\testing_files_for_importing\\button.js",
-      "preview": "import React from 'react'\n\nexport function Button({\n    className,\n    variant = 'default',\n    size"
+      "import_path": "./utils/fileSystem",
+      "abs_path": "C:\\Users\\Apurav\\Downloads\\devdynamo\\devdynamoes_IIITV\\my-app\\app\\utils\\fileSystem.js",
+      "preview": "// utils/fileSystem.js\n// Note: This file demonstrates modern File System Access API usage \n// which"
+    },
+    {
+      "import_path": "./components/Editor",
+      "abs_path": "C:\\Users\\Apurav\\Downloads\\devdynamo\\devdynamoes_IIITV\\my-app\\app\\components\\Editor.js",
+      "preview": "// components/Editor.js\n\"use client\";\nimport { useEffect, useState } from 'react';\nimport dynamic fr"
+    },
+    {
+      "import_path": "./components/Sidebar",
+      "abs_path": "C:\\Users\\Apurav\\Downloads\\devdynamo\\devdynamoes_IIITV\\my-app\\app\\components\\Sidebar.js",
+      "preview": "// components/Sidebar.js\nimport { useState } from 'react';\n\nexport default function Sidebar({ files,"
+    },
+    {
+      "import_path": "./components/Navbar",
+      "abs_path": "C:\\Users\\Apurav\\Downloads\\devdynamo\\devdynamoes_IIITV\\my-app\\app\\components\\Navbar.js",
+      "preview": "// components/Navbar.js\nexport default function Navbar({ \n  filename, \n  toggleTheme, \n  theme, \n  o"
+    },
+    {
+      "import_path": "./components/StatusBar",
+      "abs_path": "C:\\Users\\Apurav\\Downloads\\devdynamo\\devdynamoes_IIITV\\my-app\\app\\components\\StatusBar.js",
+      "preview": "// components/StatusBar.js\nexport default function StatusBar({ language, theme }) {\n    return (\n   "
+    },
+    {
+      "import_path": "./components/FileAccessManager",
+      "abs_path": "C:\\Users\\Apurav\\Downloads\\devdynamo\\devdynamoes_IIITV\\my-app\\app\\components\\FileAccessManager.js",
+      "preview": "// components/FileAccessManager.js\nimport { useEffect } from 'react';\n\nexport default function FileA"
     }
   ],
-  "api_endpoints": [
-    {
-      "method": "get",
-      "endpoint": "/api/user/mentor/${email}",
-      "file": "test.js",
-      "dynamic": false,
-      "implementations": []
-    },
-    {
-      "method": "get",
-      "endpoint": "/api/user/id/${mentor.from}",
-      "file": "test.js",
-      "dynamic": false,
-      "implementations": []
-    },
-    {
-      "method": "get",
-      "endpoint": "/api/user/mentor/${email}",
-      "file": "test.js",
-      "dynamic": true,
-      "implementations": [],
-      "variables": [
-        "email"
-      ]
-    },
-    {
-      "method": "get",
-      "endpoint": "/api/user/id/${mentor.from}",
-      "file": "test.js",
-      "dynamic": true,
-      "implementations": [],
-      "variables": [
-        "mentor.from"
-      ]
-    },
-    {
-      "method": "delete",
-      "endpoint": "/api/notification/${id}",
-      "file": "test.js",
-      "dynamic": false,
-      "implementations": []
-    },
-    {
-      "method": "delete",
-      "endpoint": "/api/notification/${id}",
-      "file": "test.js",
-      "dynamic": false,
-      "implementations": []
-    },
-    {
-      "method": "delete",
-      "endpoint": "/api/notification/${id}",
-      "file": "test.js",
-      "dynamic": true,
-      "implementations": [],
-      "variables": [
-        "id"
-      ]
-    },
-    {
-      "method": "delete",
-      "endpoint": "/api/notification/${id}",
-      "file": "test.js",
-      "dynamic": true,
-      "implementations": [],
-      "variables": [
-        "id"
-      ]
-    },
-    {
-      "method": "post",
-      "endpoint": "/api/notofication/book",
-      "file": "test.js",
-      "dynamic": false,
-      "implementations": []
-    }
-  ]
+  "api_endpoints": []
 }

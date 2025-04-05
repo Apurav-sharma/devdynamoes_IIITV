@@ -7,6 +7,7 @@ import Sidebar from './components/Sidebar';
 import Navbar from './components/Navbar';
 import StatusBar from './components/StatusBar';
 import FileAccessManager from './components/FileAccessManager';
+import VoiceAssistant from './components/voice/record';
 
 export default function Home() {
   const [files, setFiles] = useState([
@@ -17,6 +18,8 @@ export default function Home() {
   const [projectFolder, setProjectFolder] = useState(null);
   const fileInputRef = useRef(null);
   const folderInputRef = useRef(null);
+  const [transcript, setTranscript] = useState('');
+  const editorRef = useRef(null);
 
   const handleFileSelect = (fileId) => {
     const file = files.find(f => f.id === fileId);
@@ -24,7 +27,7 @@ export default function Home() {
   };
 
   const handleContentChange = (newContent) => {
-    const updatedFiles = files.map(f => 
+    const updatedFiles = files.map(f =>
       f.id === activeFile.id ? { ...f, content: newContent } : f
     );
     setFiles(updatedFiles);
@@ -50,7 +53,7 @@ export default function Home() {
     for (let i = 0; i < selectedFiles.length; i++) {
       const file = selectedFiles[i];
       const reader = new FileReader();
-      
+
       // Create a promise to handle the asynchronous file reading
       const readFileContent = new Promise((resolve) => {
         reader.onload = (event) => {
@@ -64,39 +67,41 @@ export default function Home() {
           });
         };
       });
-      
+
       reader.readAsText(file);
       newFiles.push(await readFileContent);
     }
 
     setFiles(prev => [...prev, ...newFiles]);
-    setActiveFile(newFiles[0]);
-    
+    if (newFiles.length) {
+      setActiveFile(newFiles[0]);
+    }
+
     // Reset the file input
     e.target.value = null;
   };
-  
+
   const openFolder = () => {
     folderInputRef.current.click();
   };
-  
+
   const handleFolderUpload = async (e) => {
     const selectedFiles = e.target.files;
     if (!selectedFiles.length) return;
-    
+
     // Try to determine the project folder from the first file's path
     const firstFilePath = selectedFiles[0].webkitRelativePath;
     const projectName = firstFilePath.split('/')[0];
     setProjectFolder(projectName);
-    
+
     const newFiles = [];
     const existingIds = files.map(f => f.id);
     let maxId = existingIds.length ? Math.max(...existingIds) : 0;
-    
+
     for (let i = 0; i < selectedFiles.length; i++) {
       const file = selectedFiles[i];
       const reader = new FileReader();
-      
+
       const readFileContent = new Promise((resolve) => {
         reader.onload = (event) => {
           const content = event.target.result;
@@ -109,21 +114,21 @@ export default function Home() {
           });
         };
       });
-      
+
       reader.readAsText(file);
       newFiles.push(await readFileContent);
     }
-    
+
     setFiles(newFiles);
     if (newFiles.length) setActiveFile(newFiles[0]);
-    
+
     // Reset the file input
     e.target.value = null;
   };
-  
+
   const saveFile = () => {
     if (!activeFile) return;
-    
+
     const blob = new Blob([activeFile.content], { type: 'text/plain' });
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
@@ -134,14 +139,14 @@ export default function Home() {
     document.body.removeChild(a);
     URL.revokeObjectURL(url);
   };
-  
+
   const createNewFile = () => {
     const fileName = prompt("Enter file name:", "untitled.js");
     if (!fileName) return;
-    
+
     const existingIds = files.map(f => f.id);
     const newId = existingIds.length ? Math.max(...existingIds) + 1 : 1;
-    
+
     const newFile = {
       id: newId,
       name: fileName,
@@ -149,11 +154,17 @@ export default function Home() {
       language: getLanguageFromFileName(fileName),
       path: projectFolder ? `${projectFolder}/${fileName}` : fileName
     };
-    
+
     setFiles(prev => [...prev, newFile]);
     setActiveFile(newFile);
   };
-  
+
+  // Handle transcript updates from voice assistant
+  const handleTranscriptUpdate = (newTranscript) => {
+    setTranscript(newTranscript);
+    // Process voice commands if needed
+  };
+
   // Helper function to determine language from file extension
   const getLanguageFromFileName = (fileName) => {
     const extension = fileName.split('.').pop().toLowerCase();
@@ -176,16 +187,16 @@ export default function Home() {
       'rb': 'ruby',
       'rs': 'rust'
     };
-    
+
     return languageMap[extension] || 'plaintext';
   };
 
   return (
     <div className="flex flex-col h-screen bg-gray-900">
-      <Navbar 
-        filename={activeFile?.name} 
-        toggleTheme={toggleTheme} 
-        theme={theme} 
+      <Navbar
+        filename={activeFile?.name}
+        toggleTheme={toggleTheme}
+        theme={theme}
         openFile={openFile}
         openFolder={openFolder}
         saveFile={saveFile}
@@ -193,36 +204,41 @@ export default function Home() {
         projectFolder={projectFolder}
       />
       <div className="flex flex-1 overflow-hidden">
-        <Sidebar 
-          files={files} 
-          activeFileId={activeFile?.id} 
-          onFileSelect={handleFileSelect} 
+        <Sidebar
+          files={files}
+          activeFileId={activeFile?.id}
+          onFileSelect={handleFileSelect}
           projectFolder={projectFolder}
         />
-        <Editor 
-          value={activeFile?.content || ''} 
-          language={activeFile?.language || 'javascript'} 
-          onChange={handleContentChange}
-          theme={theme}
-        />
+        <div className="flex flex-col flex-1">
+          <Editor
+            value={activeFile?.content || ''}
+            language={activeFile?.language || 'javascript'}
+            onChange={handleContentChange}
+            theme={theme}
+            editorRef={editorRef}
+          />
+          <VoiceAssistant editorRef={editorRef} />
+        </div>
       </div>
       <StatusBar language={activeFile?.language} theme={theme} />
-      
+
       {/* Hidden file inputs */}
-      <input 
-        type="file" 
+      <input
+        type="file"
         ref={fileInputRef}
-        style={{ display: 'none' }} 
+        style={{ display: 'none' }}
         onChange={handleFileUpload}
         multiple
       />
-      <input 
-        type="file" 
+      <input
+        type="file"
         ref={folderInputRef}
-        style={{ display: 'none' }} 
+        style={{ display: 'none' }}
         onChange={handleFolderUpload}
-        directory=""
-        webkitdirectory=""
+        // Using data attributes for directory selection which are more widely supported
+        data-directory=""
+        data-webkitdirectory=""
       />
       <FileAccessManager />
     </div>

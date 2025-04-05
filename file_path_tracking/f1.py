@@ -317,7 +317,7 @@ def main():
         file_path = sys.argv[1]
     else:
         # Using the file from the example
-        file_path = "test.js"
+        file_path = "../my-app/app/page.js"
     
     # Ensure the file exists
     if not os.path.exists(file_path):
