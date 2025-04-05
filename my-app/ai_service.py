@@ -108,6 +108,7 @@ async def process_ai_request(request: AiRequest = Depends(validate_model)):
             temperature=0.9,
             groq_api_key=GROQ_API_KEY
         )
+        print(f"Using model: {request.model}")
         
         # Build the prompt
         prompt = f"As an AI code assistant, help with the following question about this {request.language} code:\n\n"

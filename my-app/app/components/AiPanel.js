@@ -105,6 +105,8 @@ export default function AiPanel({
         }),
       });
       
+      console.log('AI response:', response);
+
       if (!response.ok) {
         throw new Error(`Failed to get AI response: ${response.statusText}`);
       }

@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useRef, useState } from 'react';
+import axios from 'axios';
 
 export default function VoiceAssistant({ editorRef }) {
     const [transcript, setTranscript] = useState('');
@@ -57,7 +58,10 @@ export default function VoiceAssistant({ editorRef }) {
             text: cmd
         })
 
-        command = res.matched_command;
+        // console.log(res)
+
+        const command = res.data.matched_command;
+        console.log(command)
 
         // Editor navigation commands
         if (command.includes('scroll down')) {

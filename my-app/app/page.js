@@ -1,3 +1,4 @@
+// app/page.js
 "use client";
 import { useState, useEffect, useRef } from 'react';
 import { openFileModern, saveFileModern, openDirectoryModern } from './utils/fileSystem';
@@ -6,8 +7,8 @@ import Sidebar from './components/Sidebar';
 import Navbar from './components/Navbar';
 import StatusBar from './components/StatusBar';
 import FileAccessManager from './components/FileAccessManager';
-import AiPanel from './components/AiPanel';
 import VoiceAssistant from './components/voice/record';
+import AiPanel from './components/AiPanel';
 
 export default function Home() {
   const [files, setFiles] = useState([
@@ -16,10 +17,10 @@ export default function Home() {
   const [activeFile, setActiveFile] = useState(files[0]);
   const [theme, setTheme] = useState('vs-dark');
   const [projectFolder, setProjectFolder] = useState(null);
-  const [showAiPanel, setShowAiPanel] = useState(false);
   const fileInputRef = useRef(null);
   const folderInputRef = useRef(null);
   const [transcript, setTranscript] = useState('');
+  const [showAiPanel, setShowAiPanel] = useState(false);
   const editorRef = useRef(null);
 
   const handleFileSelect = (fileId) => {
@@ -164,6 +165,11 @@ export default function Home() {
     setActiveFile(newFile);
   };
 
+  const applyAiChangesToEditor = (codeBlock) => {
+    if (!activeFile) return;
+    handleContentChange(codeBlock);
+  };
+
   // Handle transcript updates from voice assistant
   const handleTranscriptUpdate = (newTranscript) => {
     setTranscript(newTranscript);
@@ -196,12 +202,6 @@ export default function Home() {
     return languageMap[extension] || 'plaintext';
   };
 
-  // Apply AI-generated code to editor
-  const applyAiChangesToEditor = (codeBlock) => {
-    if (!activeFile) return;
-    handleContentChange(codeBlock);
-  };
-
   return (
     <div className="flex flex-col h-screen bg-gray-900">
       <Navbar
@@ -222,27 +222,25 @@ export default function Home() {
           onFileSelect={handleFileSelect}
           projectFolder={projectFolder}
         />
-        <div className="flex flex-1 overflow-hidden">
-          <div className={`flex-1 ${showAiPanel ? 'w-2/3' : 'w-full'} overflow-hidden`}>
-            <Editor 
-              value={activeFile?.content || ''} 
-              language={activeFile?.language || 'javascript'} 
-              onChange={handleContentChange}
-              theme={theme}
-              // onMount={handleEditorDidMount}
-              editorRef={editorRef}
-            />
-          </div>
-          {showAiPanel && (
-            <AiPanel 
-              theme={theme} 
-              toggleAiPanel={toggleAiPanel} 
-              activeFile={activeFile}
-              applyAiChangesToEditor={applyAiChangesToEditor}
-              editorRef={editorRef}
-            />
-          )}
+        <div className="flex flex-col flex-1">
+          <Editor
+            value={activeFile?.content || ''}
+            language={activeFile?.language || 'javascript'}
+            onChange={handleContentChange}
+            theme={theme}
+            editorRef={editorRef}
+          />
+          <VoiceAssistant editorRef={editorRef} />
         </div>
+        {showAiPanel && (
+          <AiPanel
+            theme={theme}
+            toggleAiPanel={toggleAiPanel}
+            activeFile={activeFile}
+            applyAiChangesToEditor={applyAiChangesToEditor}
+            editorRef={editorRef}
+          />
+        )}
       </div>
       <StatusBar language={activeFile?.language} theme={theme} />
 

@@ -66,7 +66,7 @@ const Editor = forwardRef(({ value, language, onChange, theme, editorRef }, ref)
         theme={theme}
         onChange={handleEditorChange}
         options={options}
-        onMount={handleEditorDidMount}
+        onMount={handleMountchange}
       />
     </div>
   );

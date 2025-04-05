@@ -2,8 +2,11 @@
 from sentence_transformers import SentenceTransformer
 from sklearn.metrics.pairwise import cosine_similarity
 from flask import Flask, request, jsonify
+from flask_cors import CORS
 
 app = Flask(__name__)
+
+CORS(app)
 path = r"C:\Users\Apurav\OneDrive\Desktop\Project_ML\Cold_email_generator\models\all-MiniLM-L6-v2"
 model = SentenceTransformer(path)
 print(model)
@@ -12,7 +15,7 @@ print(model)
 commands = {
     "scroll down": "scroll_down",
     "scroll up": "scroll_up",
-    "delete this line": "delete_line",
+    "delete line": "delete_line",
     "copy code": "copy",
     "paste code": "paste",
     "ask llm": "ask_llm",
