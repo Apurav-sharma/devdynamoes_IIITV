@@ -1,0 +1,91 @@
+{
+  "main_file": "test.js",
+  "project_root": "C:\\Users\\Apurav\\Downloads\\devdynamo\\devdynamoes_IIITV\\file_path_tracking",
+  "imports": [
+    "../testing_files_for_importing/button"
+  ],
+  "linked_files": [
+    {
+      "import_path": "../testing_files_for_importing/button",
+      "abs_path": "C:\\Users\\Apurav\\Downloads\\devdynamo\\devdynamoes_IIITV\\testing_files_for_importing\\button.js",
+      "preview": "import React from 'react'\n\nexport function Button({\n    className,\n    variant = 'default',\n    size"
+    }
+  ],
+  "api_endpoints": [
+    {
+      "method": "get",
+      "endpoint": "/api/user/mentor/${email}",
+      "file": "test.js",
+      "dynamic": false,
+      "implementations": []
+    },
+    {
+      "method": "get",
+      "endpoint": "/api/user/id/${mentor.from}",
+      "file": "test.js",
+      "dynamic": false,
+      "implementations": []
+    },
+    {
+      "method": "get",
+      "endpoint": "/api/user/mentor/${email}",
+      "file": "test.js",
+      "dynamic": true,
+      "implementations": [],
+      "variables": [
+        "email"
+      ]
+    },
+    {
+      "method": "get",
+      "endpoint": "/api/user/id/${mentor.from}",
+      "file": "test.js",
+      "dynamic": true,
+      "implementations": [],
+      "variables": [
+        "mentor.from"
+      ]
+    },
+    {
+      "method": "delete",
+      "endpoint": "/api/notification/${id}",
+      "file": "test.js",
+      "dynamic": false,
+      "implementations": []
+    },
+    {
+      "method": "delete",
+      "endpoint": "/api/notification/${id}",
+      "file": "test.js",
+      "dynamic": false,
+      "implementations": []
+    },
+    {
+      "method": "delete",
+      "endpoint": "/api/notification/${id}",
+      "file": "test.js",
+      "dynamic": true,
+      "implementations": [],
+      "variables": [
+        "id"
+      ]
+    },
+    {
+      "method": "delete",
+      "endpoint": "/api/notification/${id}",
+      "file": "test.js",
+      "dynamic": true,
+      "implementations": [],
+      "variables": [
+        "id"
+      ]
+    },
+    {
+      "method": "post",
+      "endpoint": "/api/notofication/book",
+      "file": "test.js",
+      "dynamic": false,
+      "implementations": []
+    }
+  ]
+}
