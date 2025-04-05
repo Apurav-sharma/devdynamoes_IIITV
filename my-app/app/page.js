@@ -224,7 +224,8 @@ export default function Home() {
               language={activeFile?.language || 'javascript'} 
               onChange={handleContentChange}
               theme={theme}
-              onMount={handleEditorDidMount}
+              // onMount={handleEditorDidMount}
+              editorRef={editorRef}
             />
           </div>
           {showAiPanel && (

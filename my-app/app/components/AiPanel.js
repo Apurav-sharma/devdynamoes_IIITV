@@ -4,8 +4,7 @@ export default function AiPanel({
   theme, 
   toggleAiPanel, 
   activeFile, 
-  applyAiChangesToEditor, 
-  editorRef 
+  editorRef
 }) {
   const [aiInput, setAiInput] = useState('');
   const [aiMessages, setAiMessages] = useState([]);
@@ -14,6 +13,7 @@ export default function AiPanel({
   const [isUsingSelection, setIsUsingSelection] = useState(false);
   const aiChatRef = useRef(null);
   const inputRef = useRef(null);
+  // console.log(editorRef, "AiPanel editorRef");
 
   // Scroll to bottom when messages change
   useEffect(() => {
@@ -25,28 +25,46 @@ export default function AiPanel({
   // Check for selection changes when panel is focused or interacted with
   useEffect(() => {
     // Set up interval to check for selections
+    // console.log('Setting up selection interval...', editorRef.current);
     const checkSelectionInterval = setInterval(() => {
       if (editorRef.current) {
         const selection = editorRef.current.getSelection();
+        // console.log('Current selection:', selection);
         const selectedText = editorRef.current.getModel().getValueInRange(selection);
         
         if (selectedText && selectedText.trim() !== '' && selectedText !== selectedCode) {
           setSelectedCode(selectedText);
           setIsUsingSelection(true);
           
-          // We don't auto-insert the code into the input anymore
-          // Just track that we have a selection
-          
-          // Focus the input field for user to type their prompt
+           // Focus the input field for user to type their prompt
           if (inputRef.current) {
             inputRef.current.focus();
           }
         }
       }
-    }, 500); // Check every half second
+    }, 1000); // Check every half second
     
     return () => clearInterval(checkSelectionInterval);
   }, [editorRef, selectedCode]);
+
+  // Function to apply AI-generated code changes to editor
+  const applyAiChangesToEditor = (newCode) => {
+    if (editorRef.current) {
+      const selection = editorRef.current.getSelection();
+      
+      // Check if there's an active selection
+      if (selection && !selection.isEmpty()) {
+        // Replace only the selected text
+        editorRef.current.executeEdits('ai-assistant', [{
+          range: selection,
+          text: newCode
+        }]);
+      } else {
+        // If no selection, replace the entire content
+        editorRef.current.setValue(newCode);
+      }
+    }
+  };
 
   // Function to send a message to the AI
   const sendAiMessage = async () => {

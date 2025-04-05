@@ -9,7 +9,7 @@ const MonacoEditor = dynamic(() => import('@monaco-editor/react'), {
   loading: () => <div className="flex items-center justify-center h-full text-white">Loading editor...</div>
 });
 
-export default function Editor({ value, language, onChange, theme }) {
+export default function Editor({ value, language, onChange, theme, editorRef }) {
   const [mounted, setMounted] = useState(false);
 
   // Ensure component is mounted before rendering Monaco
@@ -20,6 +20,10 @@ export default function Editor({ value, language, onChange, theme }) {
   const handleEditorChange = (value) => {
     onChange(value);
   };
+
+  const handleMountchange = (editor) => {
+    editorRef.current = editor; // Save editor reference for getting selections
+  }
 
   // Editor options to mimic VS Code
   const options = {
@@ -43,6 +47,7 @@ export default function Editor({ value, language, onChange, theme }) {
         theme={theme}
         onChange={handleEditorChange}
         options={options}
+        onMount={handleMountchange}
       />
     </div>
   );
