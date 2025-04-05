@@ -1,22 +1,65 @@
 // components/Sidebar.js
 import React, { useState, useEffect } from 'react';
 
-export default function Sidebar({ files, activeFileId, onFileSelect, projectFolder, onDeleteFile }) {
-  // State to track expanded folders
+export default function Sidebar({
+  files,
+  activeFileId,
+  onFileSelect,
+  projectFolder,
+  onDeleteFile,
+  onAddFile,
+  onAddFolder,
+}) {
   const [expandedFolders, setExpandedFolders] = useState({});
-  // State to track which file is being hovered (to show delete button)
   const [hoveredFileId, setHoveredFileId] = useState(null);
-  // State to track which folder is being hovered (to show action buttons)
   const [hoveredFolder, setHoveredFolder] = useState(null);
 
-  // Function to create a new file
+  // Function to render individual files
+  const renderFiles = (fileList) => {
+    return fileList.map(file => (
+      <div 
+        key={file.id}
+        onClick={() => onFileSelect(file.id)}
+        onMouseEnter={() => setHoveredFileId(file.id)}
+        onMouseLeave={() => setHoveredFileId(null)}
+        className={`py-1 cursor-pointer flex items-center justify-between group ${file.id === activeFileId ? 'bg-gray-700' : 'hover:bg-gray-700'}`}
+        style={{ paddingLeft: '0.75rem', paddingRight: '0.5rem' }}
+      >
+        <div className="flex items-center overflow-hidden">
+          <span className="mr-2 flex-shrink-0">
+            {file.language === 'javascript' && '📄'}
+            {file.language === 'typescript' && '📄'}
+            {file.language === 'css' && '🎨'}
+            {file.language === 'html' && '🌐'}
+            {file.language === 'json' && '📋'}
+            {file.language === 'markdown' && '📝'}
+            {!['javascript', 'typescript', 'css', 'html', 'json', 'markdown'].includes(file.language) && '📄'}
+          </span>
+          <span className="truncate">{file.name}</span>
+        </div>
+        {(hoveredFileId === file.id || file.id === activeFileId) && (
+          <button 
+            onClick={(e) => {
+              e.stopPropagation();
+              onDeleteFile(file.id);
+            }}
+            className="text-gray-400 hover:text-white hover:bg-red-600 rounded p-1 h-5 w-5 flex items-center justify-center"
+            title="Delete file"
+          >
+            ×
+          </button>
+        )}
+      </div>
+    ));
+  };
+
+  // Function to create a new file with proper path handling
   const createNewFile = (parentPath = '') => {
     const fileName = prompt("Enter file name:", "untitled.js");
     if (!fileName) return;
     
     // Generate a new file ID
-    const existingIds = files.map(f => f.id);
-    const newId = existingIds.length ? Math.max(...existingIds) + 1 : 1;
+    const newId = files.length > 0 ? Math.max(...files.map(f => f.id)) + 1 : 1;
     
     // Create the full path for the file
     let fullPath = fileName;
@@ -35,17 +78,12 @@ export default function Sidebar({ files, activeFileId, onFileSelect, projectFold
       path: fullPath
     };
     
-    // Add to files array (this would need to be passed up to the parent)
     if (typeof onAddFile === 'function') {
       onAddFile(newFile);
-    } else {
-      // Fallback if onAddFile isn't provided
-      alert("New file created, but handler not implemented: " + fullPath);
-      console.log("New file would be created:", newFile);
     }
   };
   
-  // Function to create a new folder
+  // Function to create a new folder with proper path handling
   const createNewFolder = (parentPath = '') => {
     const folderName = prompt("Enter folder name:", "new-folder");
     if (!folderName) return;
@@ -58,36 +96,14 @@ export default function Sidebar({ files, activeFileId, onFileSelect, projectFold
       fullPath = `${projectFolder}/${folderName}`;
     }
     
-    // Create the folder (you would need to implement this in your file system)
     if (typeof onAddFolder === 'function') {
       onAddFolder(fullPath);
-    } else {
-      // Fallback if onAddFolder isn't provided
-      alert("New folder would be created: " + fullPath);
-      // Manually add the folder to expanded folders to show it's created
-      setExpandedFolders(prev => ({
-        ...prev,
-        [fullPath]: true
-      }));
+      // Auto-expand the parent folder
+      if (parentPath) {
+        setExpandedFolders(prev => ({ ...prev, [parentPath]: true }));
+      }
     }
   };
-  
-  // Reset expanded folders when project changes
-  useEffect(() => {
-    if (projectFolder) {
-      // Start with all top-level folders expanded
-      const initialExpanded = {};
-      files.forEach(file => {
-        if (file.path) {
-          const parts = file.path.split('/');
-          if (parts.length > 1) {
-            initialExpanded[parts[0]] = true;
-          }
-        }
-      });
-      setExpandedFolders(initialExpanded);
-    }
-  }, [projectFolder, files]);
 
   // Helper function to get language from file extension
   const getLanguageFromFileName = (fileName) => {
@@ -115,7 +131,30 @@ export default function Sidebar({ files, activeFileId, onFileSelect, projectFold
     return languageMap[extension] || 'plaintext';
   };
 
-  // Function to organize files into a folder structure
+  // Helper function to get parent path from a full path
+  const getParentPath = (path) => {
+    const parts = path.split('/');
+    if (parts.length <= 1) return '';
+    return parts.slice(0, -1).join('/');
+  };
+
+  // Reset expanded folders when project changes
+  useEffect(() => {
+    if (projectFolder) {
+      const initialExpanded = {};
+      files.forEach(file => {
+        if (file.path) {
+          const parentPath = getParentPath(file.path);
+          if (parentPath) {
+            initialExpanded[parentPath] = true;
+          }
+        }
+      });
+      setExpandedFolders(initialExpanded);
+    }
+  }, [projectFolder, files]);
+
+  // Modified organizeFilesByFolder to better handle nested structures
   const organizeFilesByFolder = () => {
     const fileTree = { folders: {}, files: [] };
     
@@ -126,112 +165,48 @@ export default function Sidebar({ files, activeFileId, onFileSelect, projectFold
       }
       
       const pathParts = file.path.split('/');
+      let currentLevel = fileTree;
       
-      // If it's a top-level file
-      if (pathParts.length === 1) {
-        fileTree.files.push(file);
-        return;
-      }
-      
-      // Handle nested folders
-      let currentLevel = fileTree.folders;
-      
-      // Create folder path if it doesn't exist
+      // Traverse or create the folder structure
       for (let i = 0; i < pathParts.length - 1; i++) {
         const folderName = pathParts[i];
         
-        if (!currentLevel[folderName]) {
-          currentLevel[folderName] = { folders: {}, files: [] };
+        if (!currentLevel.folders[folderName]) {
+          currentLevel.folders[folderName] = { folders: {}, files: [] };
         }
         
-        currentLevel = currentLevel[folderName].folders;
+        currentLevel = currentLevel.folders[folderName];
       }
       
-      // Add file to its containing folder
-      const fileName = pathParts[pathParts.length - 1];
-      const folderPath = pathParts.slice(0, -1).join('/');
-      
-      // Navigate to the correct folder
-      currentLevel = fileTree.folders;
-      for (let i = 0; i < pathParts.length - 2; i++) {
-        currentLevel = currentLevel[pathParts[i]].folders;
-      }
-      
-      // Add the file to its immediate parent folder
-      if (pathParts.length > 1) {
-        const parentFolder = pathParts[pathParts.length - 2];
-        if (currentLevel[parentFolder]) {
-          currentLevel[parentFolder].files.push(file);
-        }
-      }
+      // Add the file to the correct level
+      currentLevel.files.push(file);
     });
     
     return fileTree;
   };
   
-  const toggleFolder = (folderPath) => {
+  const toggleFolder = (folderPath, e) => {
+    e.stopPropagation();
     setExpandedFolders(prev => ({
       ...prev,
       [folderPath]: !prev[folderPath]
     }));
   };
   
-  // Function to handle file deletion
-  const handleDeleteFile = (fileId, e) => {
-    e.stopPropagation(); // Prevent triggering file selection
-    onDeleteFile(fileId);
-  };
-  
-  // Function to render files inside a folder
-  const renderFiles = (fileList) => {
-    return fileList.map(file => (
-      <div 
-        key={file.id}
-        onClick={() => onFileSelect(file.id)}
-        onMouseEnter={() => setHoveredFileId(file.id)}
-        onMouseLeave={() => setHoveredFileId(null)}
-        className={`py-1 cursor-pointer flex items-center justify-between group ${file.id === activeFileId ? 'bg-gray-700' : 'hover:bg-gray-700'}`}
-        style={{ paddingLeft: '0.75rem', paddingRight: '0.5rem' }}
-      >
-        <div className="flex items-center overflow-hidden">
-          <span className="mr-2 flex-shrink-0">
-            {file.language === 'javascript' && '📄'}
-            {file.language === 'typescript' && '📄'}
-            {file.language === 'css' && '🎨'}
-            {file.language === 'html' && '🌐'}
-            {file.language === 'json' && '📋'}
-            {file.language === 'markdown' && '📝'}
-            {!['javascript', 'typescript', 'css', 'html', 'json', 'markdown'].includes(file.language) && '📄'}
-          </span>
-          <span className="truncate">{file.name}</span>
-        </div>
-        {(hoveredFileId === file.id || file.id === activeFileId) && (
-          <button 
-            onClick={(e) => handleDeleteFile(file.id, e)}
-            className="text-gray-400 hover:text-white hover:bg-red-600 rounded p-1 h-5 w-5 flex items-center justify-center"
-            title="Delete file"
-          >
-            ×
-          </button>
-        )}
-      </div>
-    ));
-  };
-  
-  // Recursive function to render the folder structure
-  const renderFolderStructure = (tree, level = 0, parentPath = '') => {
+  // Modified renderFolderStructure to properly handle nested paths
+  const renderFolderStructure = (tree, currentPath = '') => {
     if (!tree) return null;
     
     return (
-      <div style={{ paddingLeft: level > 0 ? '0.75rem' : '0' }}>
+      <div style={{ paddingLeft: currentPath ? '0.75rem' : '0' }}>
         {tree.files && tree.files.length > 0 && (
           <div>
             {renderFiles(tree.files)}
           </div>
         )}
         
-        {tree.folders && Object.keys(tree.folders).map(folderName => {
-          const folderPath = parentPath ? `${parentPath}/${folderName}` : folderName;
+        {tree.folders && Object.entries(tree.folders).map(([folderName, folderContents]) => {
+          const folderPath = currentPath ? `${currentPath}/${folderName}` : folderName;
           const isExpanded = expandedFolders[folderPath];
           
           return (
@@ -244,13 +219,13 @@ export default function Sidebar({ files, activeFileId, onFileSelect, projectFold
                 <div 
                   className="flex items-center flex-grow overflow-hidden"
                   style={{ paddingLeft: '0.75rem' }}
-                  onClick={() => toggleFolder(folderPath)}
+                  onClick={(e) => toggleFolder(folderPath, e)}
                 >
                   <span className="mr-2">{isExpanded ? '📂' : '📁'}</span>
                   <span className="truncate">{folderName}</span>
                 </div>
                 
-                {hoveredFolder === folderPath && (
+                {(hoveredFolder === folderPath || isExpanded) && (
                   <div className="flex items-center">
                     <button 
                       onClick={(e) => {
@@ -278,7 +253,7 @@ export default function Sidebar({ files, activeFileId, onFileSelect, projectFold
               
               {isExpanded && (
                 <div>
-                  {renderFolderStructure(tree.folders[folderName], level + 1, folderPath)}
+                  {renderFolderStructure(folderContents, folderPath)}
                 </div>
               )}
             </div>
@@ -287,9 +262,6 @@ export default function Sidebar({ files, activeFileId, onFileSelect, projectFold
       </div>
     );
   };
-  
-  // Get the organized file tree
-  const fileTree = organizeFilesByFolder();
 
   return (
     <div className="w-64 bg-gray-800 text-white overflow-y-auto flex flex-col">
@@ -321,7 +293,7 @@ export default function Sidebar({ files, activeFileId, onFileSelect, projectFold
           </div>
         ) : (
           <div className="file-tree">
-            {renderFolderStructure(fileTree)}
+            {renderFolderStructure(organizeFilesByFolder())}
           </div>
         )}
       </div>

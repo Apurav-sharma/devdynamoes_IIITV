@@ -59,7 +59,6 @@ export default function Home() {
   const openFile = async () => {
     fileInputRef.current.click();
   };
-
   const handleFileUpload = async (e) => {
     const selectedFiles = e.target.files;
     if (!selectedFiles.length) return;
@@ -156,43 +155,85 @@ export default function Home() {
     // Reset the file input
     e.target.value = null;
   };
-  const handleAddFile = (newFile) => {
-    setFiles(prev => [...prev, newFile]);
-    setActiveFile(newFile);
+  // const handleAddFile = (newFile) => {
+  //   setFiles(prev => [...prev, newFile]);
+  //   setActiveFile(newFile);
+  // };
+
+  // const handleAddFolder = (folderPath) => {
+  //   // Folders don't need to be tracked in state directly, 
+  //   // they're inferred from file paths
+  //   // We could create an empty .gitkeep file in the folder to make it appear
+
+  //   const folderName = folderPath.split('/').pop();
+  //   const placeholderFile = {
+  //     id: Date.now(), // Use timestamp as a quick unique ID
+  //     name: '.gitkeep',
+  //     content: '',
+  //     language: 'plaintext',
+  //     path: folderPath + '/.gitkeep'
+  //   };
+
+  //   setFiles(prev => [...prev, placeholderFile]);
+
+  //   // Optionally show a success message
+  //   alert(`Folder "${folderName}" created successfully`);
+  // };
+
+const handleAddFile = (newFile) => {
+  setFiles(prev => [...prev, newFile]);
+  setActiveFile(newFile);
+};
+
+const handleAddFolder = (folderPath) => {
+  const folderName = folderPath.split('/').pop();
+  const placeholderFile = {
+    id: Date.now(),
+    name: '.gitkeep',
+    content: '',
+    language: 'plaintext',
+    path: `${folderPath}/.gitkeep`
   };
+  
+  setFiles(prev => [...prev, placeholderFile]);
+};
 
-  const handleAddFolder = (folderPath) => {
-    // Folders don't need to be tracked in state directly, 
-    // they're inferred from file paths
-    // We could create an empty .gitkeep file in the folder to make it appear
+  // const saveFile = () => {
+  //   if (!activeFile) return;
 
-    const folderName = folderPath.split('/').pop();
-    const placeholderFile = {
-      id: Date.now(), // Use timestamp as a quick unique ID
-      name: '.gitkeep',
-      content: '',
-      language: 'plaintext',
-      path: folderPath + '/.gitkeep'
-    };
-
-    setFiles(prev => [...prev, placeholderFile]);
-
-    // Optionally show a success message
-    alert(`Folder "${folderName}" created successfully`);
-  };
-
-  const saveFile = () => {
+  //   const blob = new Blob([activeFile.content], { type: 'text/plain' });
+  //   const url = URL.createObjectURL(blob);
+  //   const a = document.createElement('a');
+  //   a.href = url;
+  //   a.download = activeFile.name;
+  //   document.body.appendChild(a);
+  //   a.click();
+  //   document.body.removeChild(a);
+  //   URL.revokeObjectURL(url);
+  // };
+  const saveFile = async () => {
     if (!activeFile) return;
-
-    const blob = new Blob([activeFile.content], { type: 'text/plain' });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = activeFile.name;
-    document.body.appendChild(a);
-    a.click();
-    document.body.removeChild(a);
-    URL.revokeObjectURL(url);
+    
+    if (activeFile.fileHandle) {
+      // Use modern API if available
+      const success = await saveFileModern(activeFile.fileHandle, activeFile.content);
+      if (success) {
+        alert('File saved successfully!');
+      } else {
+        alert('Error saving file');
+      }
+    } else {
+      // Fallback to download method
+      const blob = new Blob([activeFile.content], { type: 'text/plain' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = activeFile.name;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+    }
   };
 
   const createNewFile = () => {
