@@ -9,6 +9,7 @@ import StatusBar from './components/StatusBar';
 import FileAccessManager from './components/FileAccessManager';
 import VoiceAssistant from './components/voice/record';
 import AiPanel from './components/AiPanel';
+import { diff_match_patch } from 'diff-match-patch';
 
 export default function Home() {
   const [files, setFiles] = useState([
@@ -22,6 +23,7 @@ export default function Home() {
   const [transcript, setTranscript] = useState('');
   const [showAiPanel, setShowAiPanel] = useState(false);
   const editorRef = useRef(null);
+  const [fileVersions, setFileVersions] = useState({});
 
   const handleFileSelect = (fileId) => {
     const file = files.find(f => f.id === fileId);
@@ -79,17 +81,17 @@ export default function Home() {
     }
 
     setFiles(prev => [...prev, ...newFiles]);
-    if (newFiles.length) {
-      setActiveFile(newFiles[0]);
-    }
+    setActiveFile(newFiles[0]);
 
     // Reset the file input
     e.target.value = null;
   };
 
+
   const openFolder = () => {
     folderInputRef.current.click();
   };
+
 
   const handleFolderUpload = async (e) => {
     const selectedFiles = e.target.files;
@@ -101,32 +103,47 @@ export default function Home() {
     setProjectFolder(projectName);
 
     const newFiles = [];
-    const existingIds = files.map(f => f.id);
-    let maxId = existingIds.length ? Math.max(...existingIds) : 0;
+    let maxId = 0;
 
     for (let i = 0; i < selectedFiles.length; i++) {
       const file = selectedFiles[i];
-      const reader = new FileReader();
+      // Skip directories and non-text files
+      if (file.size === 0 || !isLikelyTextFile(file)) continue;
 
-      const readFileContent = new Promise((resolve) => {
-        reader.onload = (event) => {
-          const content = event.target.result;
-          resolve({
-            id: ++maxId,
-            name: file.name,
-            content,
-            language: getLanguageFromFileName(file.name),
-            path: file.webkitRelativePath // Store the relative path
-          });
-        };
-      });
+      try {
+        const reader = new FileReader();
 
-      reader.readAsText(file);
-      newFiles.push(await readFileContent);
+        const readFileContent = new Promise((resolve, reject) => {
+          reader.onload = (event) => {
+            try {
+              const content = event.target.result;
+              resolve({
+                id: ++maxId,
+                name: file.name,
+                content,
+                language: getLanguageFromFileName(file.name),
+                path: file.webkitRelativePath // Store the relative path
+              });
+            } catch (error) {
+              reject(error);
+            }
+          };
+          reader.onerror = () => reject(new Error(`Failed to read ${file.name}`));
+        });
+
+        reader.readAsText(file);
+        const fileData = await readFileContent;
+        newFiles.push(fileData);
+      } catch (error) {
+        console.error(`Error processing file ${file.name}:, error`);
+      }
     }
 
-    setFiles(newFiles);
-    if (newFiles.length) setActiveFile(newFiles[0]);
+    // Only update if we have files
+    if (newFiles.length > 0) {
+      setFiles(newFiles);
+      setActiveFile(newFiles[0]);
+    }
 
     // Reset the file input
     e.target.value = null;
@@ -144,6 +161,85 @@ export default function Home() {
     a.click();
     document.body.removeChild(a);
     URL.revokeObjectURL(url);
+  };
+
+  const goToVersion = async (direction) => {
+    if (!activeFile) return;
+
+    const path = activeFile.path || activeFile.name;
+    const current = fileVersions[path] || 0;
+    const newVersion = Math.max(-1, current + direction);
+
+    try {
+      const res = await fetch(`/api/restoreVersion?path=${encodeURIComponent(path)}&version=${newVersion}`);
+      const data = await res.json();
+
+      if (!res.ok) throw new Error(data.message);
+
+      const updatedFiles = files.map(f =>
+        f.id === activeFile.id ? { ...f, content: data.content } : f
+      );
+      setFiles(updatedFiles);
+      setActiveFile({ ...activeFile, content: data.content });
+      setFileVersions(prev => ({ ...prev, [path]: data.version }));
+
+      console.log(`Restored ${path} to version ${data.version}`);
+    } catch (err) {
+      console.error("Version restore failed:", err);
+      alert("Could not restore version.");
+    }
+  };
+
+  const runFile = async () => {
+    try {
+      const dmp = new diff_match_patch();
+
+      for (const file of files) {
+        // 1. Fetch last version from MongoDB
+        const res = await fetch(`/api/files?path=${encodeURIComponent(file.path || file.name)}`);
+        const data = await res.json();
+
+        const base = data?.latestContent || '';
+        const newContent = file.content;
+
+        // 2. Compute patch between last content and new content
+        const diffs = dmp.diff_main(base, newContent);
+        dmp.diff_cleanupSemantic(diffs);
+        const patch = dmp.patch_toText(dmp.patch_make(base, diffs));
+
+        // 3. If no change, skip
+        if (!patch.trim()) {
+          console.log(`No changes in ${file.path}, skipping.`);
+          continue;
+        }
+
+        // 4. Save patch to MongoDB
+        const saveRes = await fetch('/api/savePatch', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            path: file.path || file.name,
+            patch: patch,
+            newContent: newContent, // Optional: for base update
+            author: {
+              name: "Udit Singh",
+              email: "udit@example.com"
+            }
+          })
+        });
+
+        const result = await saveRes.json();
+
+        if (!saveRes.ok) throw new Error(result.message);
+
+        console.log(`Patch saved for: ${file.path} `);
+      }
+
+      alert(`All patches saved!`);
+    } catch (error) {
+      console.error("Patch save failed:", error);
+      alert("Error saving patch.");
+    }
   };
 
   const createNewFile = () => {
@@ -214,6 +310,9 @@ export default function Home() {
         createNewFile={createNewFile}
         projectFolder={projectFolder}
         showAiPanel={toggleAiPanel}
+        runFile={runFile}
+        preVersion={() => goToVersion(-1)}
+        postVersion={() => goToVersion(1)}
       />
       <div className="flex flex-1 overflow-hidden">
         <Sidebar

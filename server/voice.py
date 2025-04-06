@@ -16,9 +16,12 @@ commands = {
     "scroll down": "scroll_down",
     "scroll up": "scroll_up",
     "delete line": "delete_line",
-    "copy code": "copy",
-    "paste code": "paste",
+    "delete selection": "delete_selection",
+    "copy from line": "copy_from_line",
+    "copy code": "copy_all",
     "ask llm": "ask_llm",
+    "find": "find_function",
+    "format code": "format_code",
 }
 command_texts = list(commands.keys())
 command_embeddings = model.encode(command_texts)
@@ -42,4 +45,4 @@ def match_command():
     })
 
 if __name__ == "__main__":
-    app.run(port=5000)
+    app.run(port=5000, debug=True)
