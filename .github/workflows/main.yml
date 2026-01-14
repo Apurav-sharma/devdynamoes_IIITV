@@ -1,0 +1,18 @@
+name: Creating build
+
+on:
+  push:
+    branches: [ apurav ]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v6.0.2
+      - name: installing dependencies
+        run: cd my-app && npm install
+      - name: build the app
+        run: cd my-app && npm run build
+
+     
