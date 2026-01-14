@@ -11,7 +11,7 @@ jobs:
     steps:
       - uses: actions/checkout@v6.0.2
       - name: installing dependencies
-        run: npm install
+        run: cd myapp && npm install
       - name: build the app
         run: npm run build
 
